@@ -46,13 +46,13 @@
 
 .textArea {
   width: 50%; /* テキストエリアの幅を50%に設定 */
-  height: 200px;
+  height: 1000px;
   overflow-y: auto; /* 縦スクロールを有効にする */
 }
 
 .previewArea {
   width: 50%; /* プレビューエリアの幅も50%に設定 */
-  height: 200px; /* テキストエリアと高さを揃える */
+  height: 1000px; /* テキストエリアと高さを揃える */
   padding: 10px;
   font-size: 1rem; /* フォントサイズを入力エリアと同じに設定 */
   font-family: Arial, sans-serif; /* フォントを入力エリアと統一 */

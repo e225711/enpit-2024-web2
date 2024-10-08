@@ -7,6 +7,21 @@ import { marked } from 'marked'; // markedライブラリをインポート
 const NewQuestionPage = () => {
   const [content, setContent] = useState(''); // 入力内容を管理するステート
 
+
+  //データベースに保存するための関数
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await fetch('../api/questions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ content }),  // 質問内容を送信
+    });
+  };
+
+  
+
   return (
     <div className={styles.container}>
       <h1>OS課題相談広場</h1>
@@ -47,7 +62,9 @@ const NewQuestionPage = () => {
           <Link href="/">
             <button type="button" className={styles.cancelButton}>キャンセル</button>
           </Link>
-          <button type="submit" className={styles.submitButton}>作成</button>
+          <form onSubmit={handleSubmit}> 
+            <button type="submit" className={styles.submitButton}>作成</button>
+          </form>
         </div>
       </form>
     </div>
