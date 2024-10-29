@@ -8,6 +8,7 @@ const NewQuestionPage = () => {
   const [content, setContent] = useState(''); // 入力内容を管理するステート
 
 
+  
   //データベースに保存するための関数
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
