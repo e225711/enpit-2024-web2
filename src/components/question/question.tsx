@@ -128,6 +128,7 @@ function QuestionContent({ question }: { question: any }) {
             <button
               type="button"
               className={styles.reloadButton}
+              onClick={() => window.location.reload()}
             >
               リロード
             </button>
