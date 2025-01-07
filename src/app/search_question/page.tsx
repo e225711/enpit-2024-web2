@@ -177,7 +177,7 @@ const SearchPage: React.FC = () => {
           <p>条件に一致する質問が見つかりませんでした。</p>
         )}
       </div>
-
+    </div>
   );
 };
 
