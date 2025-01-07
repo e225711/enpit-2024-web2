@@ -1,7 +1,4 @@
-"use client";
-
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/router";
 import Link from "next/link";
 import { marked } from "marked";
 import { format } from "date-fns";
@@ -24,32 +21,30 @@ type Question = {
   tags: Tag[];
 };
 
-type Props = {
-  questions: Question[]; // サーバーサイドから渡される質問リスト
-};
-
 const formatDate = (date: string) => {
   const dateObj = new Date(date);
   return format(dateObj, "yyyy年MM月dd日 HH:mm", { locale: ja });
 };
 
-const SearchPage: React.FC<Props> = ({ questions: initialQuestions }) => {
-  const router = useRouter();
-  const [questions, setQuestions] = useState<Question[]>(initialQuestions || []);
+// サーバーコンポーネントでデータを取得
+async function getQuestions(): Promise<Question[]> {
+  const res = await fetch(`${process.env.API_BASE_URL}/api/user-questions`, {
+    cache: "no-store", // リアルタイムのデータ取得
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch questions");
+  }
+
+  return res.json();
+}
+
+const SearchPage = async () => {
+  const initialQuestions = await getQuestions(); // 質問データを取得
+
+  const [questions, setQuestions] = useState<Question[]>(initialQuestions);
   const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (!router.isReady) return;
-
-    const { tag } = router.query;
-    if (tag) {
-      const tagsArray = Array.isArray(tag) ? tag : [tag];
-      const formattedTags = tagsArray.map((name) => ({ id: 0, name }));
-      setSelectedTags(formattedTags);
-      fetchQuestions(formattedTags);
-    }
-  }, [router.isReady, router.query]);
 
   const fetchQuestions = async (tags: Tag[]) => {
     setLoading(true);
@@ -114,14 +109,3 @@ const SearchPage: React.FC<Props> = ({ questions: initialQuestions }) => {
 };
 
 export default SearchPage;
-
-export async function getServerSideProps(): Promise<{ props: Props }> {
-  const res = await fetch(`${process.env.API_BASE_URL}/api/user-questions`);
-  const questions = await res.json();
-
-  return {
-    props: {
-      questions,
-    },
-  };
-}
