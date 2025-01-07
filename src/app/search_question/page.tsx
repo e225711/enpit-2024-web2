@@ -9,7 +9,7 @@ import { ja } from "date-fns/locale";
 import styles from "./page.module.css";
 import Header from "@/components/header/header";
 import TagSelector from "@/components/TagSelector";
-//変更
+
 type Tag = {
   id: number;
   name: string;
@@ -24,12 +24,16 @@ type Question = {
   tags: Tag[];
 };
 
+type Props = {
+  questions: Question[]; // サーバーサイドから渡される質問リスト
+};
+
 const formatDate = (date: string) => {
   const dateObj = new Date(date);
   return format(dateObj, "yyyy年MM月dd日 HH:mm", { locale: ja });
 };
 
-const SearchPage = ({ questions: initialQuestions }: { questions: Question[] }) => {
+const SearchPage: React.FC<Props> = ({ questions: initialQuestions }) => {
   const router = useRouter();
   const [questions, setQuestions] = useState<Question[]>(initialQuestions || []);
   const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
@@ -110,3 +114,14 @@ const SearchPage = ({ questions: initialQuestions }: { questions: Question[] }) 
 };
 
 export default SearchPage;
+
+export async function getServerSideProps(): Promise<{ props: Props }> {
+  const res = await fetch(`${process.env.API_BASE_URL}/api/user-questions`);
+  const questions = await res.json();
+
+  return {
+    props: {
+      questions,
+    },
+  };
+}
