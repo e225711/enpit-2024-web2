@@ -2,13 +2,13 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { marked } from 'marked';
-import { format } from 'date-fns';
-import { ja } from 'date-fns/locale';
+import { marked } from "marked";
+import { format } from "date-fns";
+import { ja } from "date-fns/locale";
 import styles from "./page.module.css";
 import TagSelector from "@/components/TagSelector";
-import Header from '@/components/header/header';
-import { useRouter } from 'next/router';
+import Header from "@/components/header/header";
+import { useRouter } from "next/router";
 
 type Tag = {
   id: number;
@@ -28,45 +28,51 @@ type Question = {
 
 const formatDate = (date: string) => {
   const dateObj = new Date(date);
-  return format(dateObj, 'yyyy年MM月dd日 HH:mm', { locale: ja });
+  return format(dateObj, "yyyy年MM月dd日 HH:mm", { locale: ja });
 };
 
 const SearchPage: React.FC = () => {
-  const [status, setStatus] = useState<string | null>(null);
+  const router = useRouter();
   const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
   const [selectedIsResolved, setSelectedIsResolved] = useState<IsResolved>(false);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(false);
-
-  //初回表示用のフラグ
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+
+  // クエリパラメータからタグを取得し、初期状態に設定
+  useEffect(() => {
+    if (router.isReady) {
+      const { tag } = router.query;
+      if (tag) {
+        const tagsArray = Array.isArray(tag) ? tag : [tag];
+        const formattedTags = tagsArray.map((name) => ({ id: 0, name })); // 仮IDでタグを生成
+        setSelectedTags(formattedTags);
+        fetchQuestions(); // 初期検索を実行
+      }
+    }
+  }, [router.isReady, router.query]);
 
   const fetchQuestions = async () => {
     setLoading(true);
-
     try {
       const queryParams = new URLSearchParams();
-  
+
       // タグをクエリパラメータに追加
       if (selectedTags.length > 0) {
         queryParams.set(
-          'tag',
-          selectedTags.map((tag) => tag.name).join(',')
+          "tag",
+          selectedTags.map((tag) => tag.name).join(",")
         );
       }
 
+      // 解決済みフィルタをクエリパラメータに追加
+      queryParams.set("isResolved", selectedIsResolved.toString());
 
-      if (selectedIsResolved !== null) {
-        queryParams.set('isResolved', selectedIsResolved.toString()); // selectedIsResolvedを使用
-      }
-  
       const res = await fetch(`/api/get-questions?${queryParams.toString()}`);
-      if (!res.ok) {
-        throw new Error('Failed to fetch questions');
-      }
-  
+      if (!res.ok) throw new Error("Failed to fetch questions");
+
       const data = await res.json();
-      setQuestions(data); // 取得した質問データをセット
+      setQuestions(data); // 質問データをセット
     } catch (error) {
       console.error(error);
     } finally {
@@ -74,24 +80,6 @@ const SearchPage: React.FC = () => {
       setIsInitialLoad(false);
     }
   };
-
-
-  //userouterを使って新しく設定
-  const router = useRouter();
-  useEffect(() => {
-    const { tag } = router.query; // URLからtagパラメータを取得
-  
-    if (tag) {
-      // 複数タグの可能性を考慮
-      const tagsArray = Array.isArray(tag) ? tag : [tag];
-      const formattedTags = tagsArray.map((name) => ({ id: 0, name })); // IDは仮
-      setSelectedTags(formattedTags); // 初期状態にセット
-      fetchQuestions(); // タグが指定されている場合に初期検索を実行
-    }
-  }, [router.query]); // URLのクエリが変わったときに再実行
-
-
-  
 
   return (
     <div className={styles.pageContainer}>
@@ -117,7 +105,7 @@ const SearchPage: React.FC = () => {
               name="status"
               value="true"
               checked={selectedIsResolved === true}
-              onChange={() => setSelectedIsResolved(true)} //IsResolvedを解決に変更
+              onChange={() => setSelectedIsResolved(true)}
               disabled={loading}
             />
             解決済
@@ -154,9 +142,9 @@ const SearchPage: React.FC = () => {
                   <span className={styles.tags}>
                     <span
                       className={styles.tag}
-                      style={{ color: question.isResolved ? 'green' : 'red' }}
+                      style={{ color: question.isResolved ? "green" : "red" }}
                     >
-                      {question.isResolved ? '解決済み' : '未解決'}
+                      {question.isResolved ? "解決済み" : "未解決"}
                     </span>
                     {question.tags.map((tag) => (
                       <span key={tag.id} className={styles.tag}>
