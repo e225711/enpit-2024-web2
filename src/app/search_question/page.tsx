@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { marked } from "marked";
@@ -26,25 +28,29 @@ const formatDate = (date: string) => {
   return format(dateObj, "yyyy年MM月dd日 HH:mm", { locale: ja });
 };
 
-// サーバーコンポーネントでデータを取得
-async function getQuestions(): Promise<Question[]> {
-  const res = await fetch(`${process.env.API_BASE_URL}/api/user-questions`, {
-    cache: "no-store", // リアルタイムのデータ取得
-  });
-
-  if (!res.ok) {
-    throw new Error("Failed to fetch questions");
-  }
-
-  return res.json();
-}
-
-const SearchPage = async () => {
-  const initialQuestions = await getQuestions(); // 質問データを取得
-
-  const [questions, setQuestions] = useState<Question[]>(initialQuestions);
+const SearchPage = () => {
+  const [questions, setQuestions] = useState<Question[]>([]);
   const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchInitialQuestions = async () => {
+      try {
+        const res = await fetch(`${process.env.API_BASE_URL}/api/user-questions`, {
+          cache: "no-store",
+        });
+
+        if (!res.ok) throw new Error("Failed to fetch questions");
+
+        const data = await res.json();
+        setQuestions(data);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    fetchInitialQuestions();
+  }, []);
 
   const fetchQuestions = async (tags: Tag[]) => {
     setLoading(true);
