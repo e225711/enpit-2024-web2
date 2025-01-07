@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/router";
 import Link from "next/link";
 import { marked } from "marked";
 import { format } from "date-fns";
@@ -8,7 +9,6 @@ import { ja } from "date-fns/locale";
 import styles from "./page.module.css";
 import TagSelector from "@/components/TagSelector";
 import Header from "@/components/header/header";
-import { useRouter } from "next/router";
 
 type Tag = {
   id: number;
@@ -39,29 +39,28 @@ const SearchPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
-  // クエリパラメータからタグを取得し、初期状態に設定
   useEffect(() => {
-    if (router.isReady) {
-      const { tag } = router.query;
-      if (tag) {
-        const tagsArray = Array.isArray(tag) ? tag : [tag];
-        const formattedTags = tagsArray.map((name) => ({ id: 0, name })); // 仮IDでタグを生成
-        setSelectedTags(formattedTags);
-        fetchQuestions(); // 初期検索を実行
-      }
+    if (!router.isReady) return; // クエリが準備されるまで待機
+
+    const { tag } = router.query;
+    if (tag) {
+      const tagsArray = Array.isArray(tag) ? tag : [tag];
+      const formattedTags = tagsArray.map((name) => ({ id: 0, name })); // 仮IDを付与
+      setSelectedTags(formattedTags);
+      fetchQuestions(formattedTags);
     }
   }, [router.isReady, router.query]);
 
-  const fetchQuestions = async () => {
+  const fetchQuestions = async (tags: Tag[]) => {
     setLoading(true);
     try {
       const queryParams = new URLSearchParams();
 
       // タグをクエリパラメータに追加
-      if (selectedTags.length > 0) {
+      if (tags.length > 0) {
         queryParams.set(
           "tag",
-          selectedTags.map((tag) => tag.name).join(",")
+          tags.map((tag) => tag.name).join(",")
         );
       }
 
@@ -72,7 +71,7 @@ const SearchPage: React.FC = () => {
       if (!res.ok) throw new Error("Failed to fetch questions");
 
       const data = await res.json();
-      setQuestions(data); // 質問データをセット
+      setQuestions(data);
     } catch (error) {
       console.error(error);
     } finally {
@@ -123,7 +122,11 @@ const SearchPage: React.FC = () => {
           </label>
         </div>
 
-        <button className={styles.button} onClick={fetchQuestions} disabled={loading}>
+        <button
+          className={styles.button}
+          onClick={() => fetchQuestions(selectedTags)}
+          disabled={loading}
+        >
           {loading ? "質問検索中..." : "検索する"}
         </button>
       </div>
