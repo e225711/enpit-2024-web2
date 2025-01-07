@@ -62,9 +62,13 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ questions, unresolvedQuesti
                   {/* 質問に関連するタグ */}
                   {question.tags && question.tags.length > 0 &&
                     question.tags.map((tag) => (
-                      <span key={tag.id} className={styles.tag}>
+                      <Link
+                        key={tag.id}
+                        href={`/search?tag=${encodeURIComponent(tag.name)}`}
+                        className={styles.tag}
+                      >
                         {tag.name}
-                      </span>
+                      </Link>
                     ))
                   }
                 </span>
@@ -95,15 +99,19 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ questions, unresolvedQuesti
         <p>タグ一覧</p>
         {tags.length > 0 ? (
           tags.map((tag) => (
-            <div key={tag.id}>
+            <Link 
+              key={tag.id} 
+              href={`/search?tag=${encodeURIComponent(tag.name)}`} 
+              className={styles.tag}
+            >
               {tag.name}
-              <br />
-            </div>
+            </Link>
           ))
         ) : (
           <p>タグがありません</p>
         )}
       </aside>
+
 
       <main className={styles.main}>
         <div className={styles.tabs}>

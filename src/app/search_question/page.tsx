@@ -8,6 +8,7 @@ import { ja } from 'date-fns/locale';
 import styles from "./page.module.css";
 import TagSelector from "@/components/TagSelector";
 import Header from '@/components/header/header';
+import { useRouter } from 'next/router';
 
 type Tag = {
   id: number;
@@ -73,6 +74,23 @@ const SearchPage: React.FC = () => {
       setIsInitialLoad(false);
     }
   };
+
+
+  //userouterを使って新しく設定
+  const router = useRouter();
+  useEffect(() => {
+    const { tag } = router.query; // URLからtagパラメータを取得
+  
+    if (tag) {
+      // 複数タグの可能性を考慮
+      const tagsArray = Array.isArray(tag) ? tag : [tag];
+      const formattedTags = tagsArray.map((name) => ({ id: 0, name })); // IDは仮
+      setSelectedTags(formattedTags); // 初期状態にセット
+      fetchQuestions(); // タグが指定されている場合に初期検索を実行
+    }
+  }, [router.query]); // URLのクエリが変わったときに再実行
+
+
   
 
   return (
@@ -123,7 +141,6 @@ const SearchPage: React.FC = () => {
       </div>
 
       <div className={styles.questionList}>
-        {/* 初回表示時に分岐 */}
         {isInitialLoad ? (
           <p>キーワードやタグを入力してください。</p>
         ) : questions.length > 0 ? (
@@ -132,31 +149,23 @@ const SearchPage: React.FC = () => {
               <h3 className={styles.questionTitle}>
                 <Link href={`/question/${question.id}`}>{question.title}</Link>
               </h3>
-              {/* 投稿日時とタグを横並びに表示するため、同じdivで囲む */}
               <div className={styles.dateAndTags}>
-                {/* タグ一覧を一行で表示 */}
                 <div className={styles.tagContainer}>
                   <span className={styles.tags}>
-                    {/* 解決状態のタグ */}
-                    <span className={styles.tag} style={{ color: question.isResolved ? 'green' : 'red' }}>
-                      {question.isResolved ? "解決済み" : "未解決"}
+                    <span
+                      className={styles.tag}
+                      style={{ color: question.isResolved ? 'green' : 'red' }}
+                    >
+                      {question.isResolved ? '解決済み' : '未解決'}
                     </span>
-
-                    {/* 質問に関連するタグ */}
-                    {question.tags && question.tags.length > 0 &&
-                      question.tags.map((tag) => (
-                        <span key={tag.id} className={styles.tag}>
-                          {tag.name}
-                        </span>
-                      ))
-                    }
+                    {question.tags.map((tag) => (
+                      <span key={tag.id} className={styles.tag}>
+                        {tag.name}
+                      </span>
+                    ))}
                   </span>
                 </div>
-
-                {/* 投稿日時 */}
-                <div className={styles.dateInfo}>
-                  {formatDate(question.createdAt)}
-                </div>
+                <div className={styles.dateInfo}>{formatDate(question.createdAt)}</div>
               </div>
               <div
                 className={styles.markdownContent}
@@ -168,7 +177,7 @@ const SearchPage: React.FC = () => {
           <p>条件に一致する質問が見つかりませんでした。</p>
         )}
       </div>
-    </div>
+
   );
 };
 
