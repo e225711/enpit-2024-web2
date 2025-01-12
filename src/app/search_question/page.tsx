@@ -8,6 +8,7 @@ import { ja } from "date-fns/locale";
 import styles from "./page.module.css";
 import Header from "@/components/header/header";
 import TagSelector from "@/components/TagSelector";
+import { useSearchParams } from "next/navigation";
 
 type Tag = {
   id: number;
@@ -33,25 +34,37 @@ const SearchPage = () => {
   const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // クエリパラメータから`tag`を取得
+  const searchParams = useSearchParams();
+  const tag = searchParams.get("tag"); // URLパラメータ 'tag'
+
+  // 初期状態でデータ取得
   useEffect(() => {
     const fetchInitialQuestions = async () => {
+      setLoading(true);
       try {
-        const res = await fetch(`${process.env.API_BASE_URL}/api/user-questions`, {
-          cache: "no-store",
-        });
+        const queryParams = new URLSearchParams();
+        if (tag) {
+          queryParams.set("tag", tag);
+          setSelectedTags([{ id: Date.now(), name: tag }]); // タグを初期選択状態に設定
+        }
 
+        const res = await fetch(`/api/get-questions?${queryParams.toString()}`);
         if (!res.ok) throw new Error("Failed to fetch questions");
 
         const data = await res.json();
         setQuestions(data);
       } catch (error) {
         console.error(error);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchInitialQuestions();
-  }, []);
+  }, [tag]);
 
+  // タグで質問を検索
   const fetchQuestions = async (tags: Tag[]) => {
     setLoading(true);
     try {
@@ -104,6 +117,14 @@ const SearchPage = () => {
             <div key={question.id} className={styles.questionItem}>
               <h3>{question.title}</h3>
               <p>{question.content}</p>
+              <p>{formatDate(question.createdAt)}</p>
+              <div>
+                {question.tags.map((tag) => (
+                  <span key={tag.id} className={styles.tag}>
+                    {tag.name}
+                  </span>
+                ))}
+              </div>
             </div>
           ))
         ) : (

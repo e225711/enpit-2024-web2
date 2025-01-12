@@ -101,7 +101,7 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ questions, unresolvedQuesti
           tags.map((tag) => (
             <Link 
               key={tag.id} 
-              href={`/search?tag=${encodeURIComponent(tag.name)}`} 
+              href={`/search_question?tag=${encodeURIComponent(tag.name)}`} 
               className={styles.tag}
             >
               {tag.name}
