@@ -79,7 +79,7 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ questions, unresolvedQuesti
             {/* サニタイズした内容を表示 */}
             <div
               className={styles.markdownContent}
-              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked(question.content)) }} // サニタイズを追加
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked(question.content) as string) }} // markedの戻り値がstringであることを明示
             />
           </div>
         ))
