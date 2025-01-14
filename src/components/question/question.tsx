@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
 import React, { useState, useEffect } from 'react';
-import { jwtDecode } from 'jwt-decode';
 import { marked } from 'marked';
+import DOMPurify from 'dompurify'; // DOMPurifyをインポート
 import { Maximize2, Minimize2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import Header from '@/components/header/header';
 import styles from './question.module.css';
+import { jwtDecode } from 'jwt-decode';
 
-// トークンのデコード用の型
 type DecodedToken = {
   id: number;
   email: string;
@@ -17,10 +17,29 @@ type DecodedToken = {
   iat: number;
 };
 
-// QuestionContent コンポーネント
-function QuestionContent({ question }: { question: any }) {
+// Question 型を定義
+type Question = {
+  id: number;
+  title: string;
+  content: string;
+  createdAt: string;
+  isResolved: boolean;
+  user: {
+    id: number;
+  };
+  answers: Answer[];
+};
+
+// Answer 型を定義
+type Answer = {
+  id: number;
+  content: string;
+  createdAt: string;
+};
+
+function QuestionContent({ question }: { question: Question }) {
   const [answerContent, setAnswerContent] = useState('');
-  const [answers, setAnswers] = useState(question.answers);
+  const [answers, setAnswers] = useState<Answer[]>(question.answers);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isResolved, setIsResolved] = useState(question.isResolved);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
@@ -29,25 +48,22 @@ function QuestionContent({ question }: { question: any }) {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     if (token) {
       try {
-        // jwtDecode を利用してユーザーIDを取得
         const decoded = jwtDecode<DecodedToken>(token);
         setCurrentUserId(decoded.id);
       } catch (error) {
-        console.error("トークンのデコードに失敗しました", error);
+        console.error('トークンのデコードに失敗しました', error);
       }
     }
   }, []);
 
-  // 日付フォーマット用関数
   const formatDate = (date: string | Date) => {
     const dateObj = typeof date === 'string' ? new Date(date) : date;
     return format(dateObj, 'yyyy年MM月dd日 HH:mm', { locale: ja });
   };
 
-  // 回答投稿時の処理
   const handleAnswerSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+    
     // 空文字または空白のみの場合は投稿させない
     if (answerContent.trim() === '') {
       alert('回答内容を入力してください。');
@@ -55,22 +71,14 @@ function QuestionContent({ question }: { question: any }) {
     }
     
     try {
-      // ログイン時のみトークンを Authorization ヘッダーに付与
-      const token = localStorage.getItem('token');
-      const headers: HeadersInit = { 'Content-Type': 'application/json' };
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-
       const res = await fetch('/api/create-answer', {
         method: 'POST',
-        headers,
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: answerContent, questionId: question.id }),
       });
-
       if (res.ok) {
         const newAnswer = await res.json();
-        setAnswers((prev: any) => [...prev, newAnswer]);
+        setAnswers((prev: Answer[]) => [...prev, newAnswer]);
         setAnswerContent('');
       } else {
         console.error('回答の投稿に失敗しました');
@@ -80,16 +88,14 @@ function QuestionContent({ question }: { question: any }) {
     }
   };
 
-  // 回答フォームの拡大・縮小
   const toggleExpand = () => {
     setIsExpanded(!isExpanded);
   };
 
-  // 質問を解決済みにする処理
   const markAsResolved = async () => {
     try {
       const response = await fetch(`/api/close-question/${question.id}`, {
-        method: "PATCH",
+        method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token') ?? ''}`
         }
@@ -97,19 +103,24 @@ function QuestionContent({ question }: { question: any }) {
 
       if (response.ok) {
         const result = await response.json();
-        console.log("APIレスポンス:", result);
+        console.log('APIレスポンス:', result);
         setIsResolved(true);
       } else {
         const errorText = await response.text();
-        console.error("APIエラー:", errorText);
+        console.error('APIエラー:', errorText);
       }
     } catch (error) {
-      console.error("ネットワークエラー:", error);
+      console.error('ネットワークエラー:', error);
     }
   };
 
-  // 現在のユーザーが質問者かどうかを判定
-  const isOwner = currentUserId === question.user.id;
+  const isOwner = currentUserId === question.user.id; // 投稿者本人かどうか確認
+
+  // サニタイズしたHTMLを生成
+// 型を明示的に指定
+const sanitizedQuestionContent = DOMPurify.sanitize(marked(question.content) as string);
+const sanitizedAnswerContent = (answer: Answer) => DOMPurify.sanitize(marked(answer.content) as string);
+
 
   return (
     <div className={styles.container}>
@@ -117,13 +128,13 @@ function QuestionContent({ question }: { question: any }) {
       <div className={`${styles.mainContent} ${isExpanded ? styles.shrinkContent : ''}`}>
         <div className={styles.headerRow}>
           <h3>質問</h3>
-          {isOwner && (
+          {isOwner && ( // 質問者本人のみ表示
             <button
               onClick={markAsResolved}
               disabled={isResolved}
               className={styles.resolveButton}
             >
-              {isResolved ? "解決済み" : "解決済みにする"}
+              {isResolved ? '解決済み' : '解決済みにする'}
             </button>
           )}
         </div>
@@ -135,13 +146,13 @@ function QuestionContent({ question }: { question: any }) {
             </span>
           </div>
           <div className={styles.content}>
-            <div dangerouslySetInnerHTML={{ __html: marked(question.content) }} />
+            <div dangerouslySetInnerHTML={{ __html: sanitizedQuestionContent }} />
           </div>
         </div>
 
         <div className={styles.answers}>
           <h3>回答 ({answers.length}件)</h3>
-          {answers.map((answer: any) => (
+          {answers.map((answer: Answer) => (
             <div key={answer.id} className={styles.answer}>
               <div className={styles.answerHeader}>
                 <span className={styles.dateInfo}>
@@ -149,7 +160,7 @@ function QuestionContent({ question }: { question: any }) {
                 </span>
               </div>
               <div className={styles.content}>
-                <div dangerouslySetInnerHTML={{ __html: marked(answer.content) }} />
+                <div dangerouslySetInnerHTML={{ __html: sanitizedAnswerContent(answer) }} />
               </div>
             </div>
           ))}

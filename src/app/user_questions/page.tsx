@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import DOMPurify from "dompurify"; // DOMPurifyをインポート
 import styles from "./page.module.css";
 import Header from "@/components/header/header";
 
@@ -102,9 +103,13 @@ export default function UserQuestionsPage() {
                     {formatDate(question.createdAt)}
                   </div>
                 </div>
-                <div className={styles.markdownContent}>
-                  {question.content}
-                </div>
+                {/* サニタイズしてから表示 */}
+                <div
+                  className={styles.markdownContent}
+                  dangerouslySetInnerHTML={{
+                    __html: DOMPurify.sanitize(question.content), // サニタイズ処理を加えます
+                  }}
+                />
               </div>
             ))}
           </div>

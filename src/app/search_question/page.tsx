@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { marked } from 'marked';
+import DOMPurify from 'dompurify'; // DOMPurifyをインポート
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import styles from "./page.module.css";
@@ -38,7 +39,7 @@ const SearchPage: React.FC = () => {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(false);
 
-  //初回表示用のフラグ
+  // 初回表示用のフラグ
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   const fetchQuestions = async () => {
@@ -47,11 +48,11 @@ const SearchPage: React.FC = () => {
     try {
       const queryParams = new URLSearchParams();
 
-      //キーワードをクエリパラメータに追加
+      // キーワードをクエリパラメータに追加
       if (keyword.trim() !== "") {
         queryParams.set("keyword", keyword.trim());
       }
-  
+
       // タグをクエリパラメータに追加
       if (selectedTags.length > 0) {
         queryParams.set(
@@ -60,16 +61,15 @@ const SearchPage: React.FC = () => {
         );
       }
 
-
       if (selectedIsResolved !== null) {
         queryParams.set('isResolved', selectedIsResolved.toString()); // selectedIsResolvedを使用
       }
-  
+
       const res = await fetch(`/api/get-questions?${queryParams.toString()}`);
       if (!res.ok) {
         throw new Error('Failed to fetch questions');
       }
-  
+
       const data = await res.json();
       setQuestions(data); // 取得した質問データをセット
     } catch (error) {
@@ -79,7 +79,6 @@ const SearchPage: React.FC = () => {
       setIsInitialLoad(false);
     }
   };
-  
 
   return (
     <div className={styles.pageContainer}>
@@ -107,7 +106,7 @@ const SearchPage: React.FC = () => {
               name="status"
               value="true"
               checked={selectedIsResolved === true}
-              onChange={() => setSelectedIsResolved(true)} //IsResolvedを解決に変更
+              onChange={() => setSelectedIsResolved(true)} // IsResolvedを解決に変更
               disabled={loading}
             />
             解決済
@@ -168,7 +167,9 @@ const SearchPage: React.FC = () => {
               </div>
               <div
                 className={styles.markdownContent}
-                dangerouslySetInnerHTML={{ __html: marked(question.content) }}
+                dangerouslySetInnerHTML={{
+                  __html: DOMPurify.sanitize(marked(question.content) as string), // markedの戻り値がstringであることを明示
+                }}
               />
             </div>
           ))

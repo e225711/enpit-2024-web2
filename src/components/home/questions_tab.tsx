@@ -5,6 +5,7 @@ import { marked } from 'marked';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import styles from '@/app/page.module.css';
+import DOMPurify from 'dompurify'; // DOMPurifyのインポート
 
 type Question = {
   id: number;
@@ -75,9 +76,10 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ questions, unresolvedQuesti
                 {formatDate(question.createdAt)}
               </div>
             </div>
+            {/* サニタイズした内容を表示 */}
             <div
               className={styles.markdownContent}
-              dangerouslySetInnerHTML={{ __html: marked(question.content) }}
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked(question.content) as string) }} // markedの戻り値がstringであることを明示
             />
           </div>
         ))
@@ -87,8 +89,6 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ questions, unresolvedQuesti
     </div>
   );
   
-  
-
   return (
     <div className={styles.container}>
       <aside className={styles.sidebar}>

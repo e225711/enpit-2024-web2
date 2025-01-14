@@ -3,6 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import styles from "./page.module.css";
+import DOMPurify from "dompurify";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -11,10 +12,15 @@ export default function Login() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // メールアドレスとパスワードをサニタイズ
+    const sanitizedEmail = DOMPurify.sanitize(email);
+    const sanitizedPassword = DOMPurify.sanitize(password);
+
     const res = await fetch("/api/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email: sanitizedEmail, password: sanitizedPassword }),
     });
     const data = await res.json();
     if (res.ok && data.token) {

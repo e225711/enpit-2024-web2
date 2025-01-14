@@ -113,7 +113,7 @@ const NewQuestionPage = () => {
           />
           <div
             className={styles.previewArea}
-            dangerouslySetInnerHTML={{ __html: marked(content) }}
+            dangerouslySetInnerHTML={{ __html: marked(content) as string }} // markedの結果をstring型にキャスト
           />
         </div>
 
