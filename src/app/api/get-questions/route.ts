@@ -6,10 +6,11 @@ const prisma = new PrismaClient();
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const tagNames = url.searchParams.get('tag')?.split(',') || []; // タグを配列として取得
-
   const isResolvedParam = url.searchParams.get('isResolved');
   const resolvedStatus = isResolvedParam === 'true' ? true : isResolvedParam === 'false' ? false : undefined;
-  
+
+  const keyword = url.searchParams.get('keyword') || ''; // キーワードを取得
+
   try {
     const questions = await prisma.question.findMany({
       where: {
@@ -24,8 +25,16 @@ export async function GET(req: Request) {
             }
           : {},
         
-        // 追加: isResolvedフィルタリング
-        isResolved: resolvedStatus,  // isResolvedフィルタリングを追加
+        // 解決状態のフィルタリング
+        isResolved: resolvedStatus,
+
+        // キーワードフィルタリング
+        OR: keyword
+          ? [
+              { title: { contains: keyword, mode: 'insensitive' } }, // タイトルにキーワードを含む
+              { content: { contains: keyword, mode: 'insensitive' } }, // コンテンツにキーワードを含む
+            ]
+          : undefined,
       },
       orderBy: { createdAt: 'desc' },
       include: { tags: true },

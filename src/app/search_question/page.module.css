@@ -75,6 +75,7 @@
   }
 
 .tag {
+    display: block;
     background-color: #efefef;
     padding: 2px 8px;
     border-radius: 3px;

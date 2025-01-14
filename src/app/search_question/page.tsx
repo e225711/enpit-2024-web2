@@ -32,13 +32,15 @@ const formatDate = (date: string) => {
 const SearchPage = () => {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
+  const [keyword, setKeyword] = useState<string>(""); // キーワード
+  const [selectedStatus, setSelectedStatus] = useState<string | null>(null); // 解決/未解決
   const [loading, setLoading] = useState(false);
 
-  // クエリパラメータから`tag`を取得
+  // クエリパラメータから値を取得
   const searchParams = useSearchParams();
   const tag = searchParams.get("tag"); // URLパラメータ 'tag'
 
-  // 初期状態でデータ取得
+  // 初期状態でデータを取得
   useEffect(() => {
     const fetchInitialQuestions = async () => {
       setLoading(true);
@@ -64,13 +66,28 @@ const SearchPage = () => {
     fetchInitialQuestions();
   }, [tag]);
 
-  // タグで質問を検索
-  const fetchQuestions = async (tags: Tag[]) => {
+  // 検索関数（タグ、キーワード、解決状態）
+  const fetchQuestions = async () => {
     setLoading(true);
     try {
       const queryParams = new URLSearchParams();
-      if (tags.length > 0) {
-        queryParams.set("tag", tags.map((tag) => tag.name).join(","));
+
+      // タグをクエリパラメータに追加
+      if (selectedTags.length > 0) {
+        queryParams.set(
+          "tag",
+          selectedTags.map((tag) => tag.name).join(",")
+        );
+      }
+
+      // キーワードをクエリパラメータに追加
+      if (keyword.trim() !== "") {
+        queryParams.set("keyword", keyword.trim());
+      }
+
+      // 解決状態をクエリパラメータに追加
+      if (selectedStatus !== null) {
+        queryParams.set("isResolved", selectedStatus);
       }
 
       const res = await fetch(`/api/get-questions?${queryParams.toString()}`);
@@ -89,12 +106,16 @@ const SearchPage = () => {
     <div className={styles.pageContainer}>
       <Header />
       <div className={styles.searchContainer}>
+        {/* キーワード入力 */}
         <textarea
           placeholder="キーワードを入力してください（任意）"
           className={styles.textarea}
+          value={keyword}
+          onChange={(e) => setKeyword(e.target.value)}
           disabled={loading}
         />
 
+        {/* タグ選択 */}
         <TagSelector
           selectedTags={selectedTags}
           setSelectedTags={setSelectedTags}
@@ -102,20 +123,53 @@ const SearchPage = () => {
           allowTagCreation={false}
         />
 
+        {/* 解決/未解決選択 */}
+        <div className={styles.radioGroup}>
+          <label className={styles.radioLabel}>
+            <input
+              type="radio"
+              name="status"
+              value="true"
+              checked={selectedStatus === "true"}
+              onChange={() => setSelectedStatus("true")}
+              disabled={loading}
+            />
+            解決済
+          </label>
+          <label className={styles.radioLabel}>
+            <input
+              type="radio"
+              name="status"
+              value="false"
+              checked={selectedStatus === "false"}
+              onChange={() => setSelectedStatus("false")}
+              disabled={loading}
+            />
+            未解決
+          </label>
+        </div>
+
+        {/* 検索ボタン */}
         <button
           className={styles.button}
-          onClick={() => fetchQuestions(selectedTags)}
+          onClick={fetchQuestions}
           disabled={loading}
         >
           {loading ? "質問検索中..." : "検索する"}
         </button>
       </div>
 
+      {/* 検索結果 */}
       <div className={styles.questionList}>
         {questions.length > 0 ? (
           questions.map((question) => (
             <div key={question.id} className={styles.questionItem}>
-              <h3>{question.title}</h3>
+              <h3 className={styles.questionTitle}>
+                {/* クリックで詳細ページに遷移 */}
+                <Link href={`/question/${question.id}`}>
+                  {question.title}
+                </Link>
+              </h3>
               <p>{question.content}</p>
               <p>{formatDate(question.createdAt)}</p>
               <div>

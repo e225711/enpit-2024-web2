@@ -96,13 +96,13 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ questions, unresolvedQuesti
   return (
     <div className={styles.container}>
       <aside className={styles.sidebar}>
-        <p>タグ一覧</p>
+      <p>タグ一覧</p>
         {tags.length > 0 ? (
           tags.map((tag) => (
-            <Link 
-              key={tag.id} 
-              href={`/search_question?tag=${encodeURIComponent(tag.name)}`} 
-              className={styles.tag}
+            <Link
+              key={tag.id}
+              href={`/search_question?tag=${encodeURIComponent(tag.name)}`}
+              className={styles.tag} /* CSSクラスを適用 */
             >
               {tag.name}
             </Link>
@@ -110,6 +110,7 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ questions, unresolvedQuesti
         ) : (
           <p>タグがありません</p>
         )}
+
       </aside>
 
 
