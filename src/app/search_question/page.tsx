@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { marked } from 'marked';
+import DOMPurify from 'dompurify'; // DOMPurifyをインポート
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import styles from "./page.module.css";
@@ -168,7 +169,9 @@ const SearchPage: React.FC = () => {
               </div>
               <div
                 className={styles.markdownContent}
-                dangerouslySetInnerHTML={{ __html: marked(question.content) }}
+                dangerouslySetInnerHTML={{
+                  __html: DOMPurify.sanitize(marked(question.content)), // サニタイズしてからセット
+                }}
               />
             </div>
           ))
