@@ -249,4 +249,34 @@
   border: 1px solid #ddd;
   border-radius: 5px;
   object-fit: cover;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.image:hover {
+  transform: scale(1.05); /* ホバー時に拡大 */
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  cursor: pointer; /* 背景クリックで閉じられることを示す */
+}
+
+.modalContent {
+  position: relative;
+}
+
+.modalImage {
+  max-width: 90%;
+  max-height: 90%;
+  border-radius: 5px;
 }

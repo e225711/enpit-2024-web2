@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { marked } from 'marked';
 import { format } from 'date-fns';
@@ -8,7 +8,7 @@ import { ja } from 'date-fns/locale';
 import { useSearchParams } from 'next/navigation';  // 追加
 import styles from "./page.module.css";
 import TagSelector from "@/components/TagSelector";
-import Header from '@/components/header/header';
+import Header from "@/components/header/header";
 
 
 type Tag = {
@@ -37,7 +37,7 @@ type Question = {
 
 const formatDate = (date: string) => {
   const dateObj = new Date(date);
-  return format(dateObj, 'yyyy年MM月dd日 HH:mm', { locale: ja });
+  return format(dateObj, "yyyy年MM月dd日 HH:mm", { locale: ja });
 };
 
 const toDataURL = (base64: string): string => {
@@ -46,14 +46,13 @@ const toDataURL = (base64: string): string => {
 
 const SearchPage: React.FC = () => {
   const [status, setStatus] = useState<string | null>(null);
-  const [keyword, setKeyword] = useState<string>('');
+  const [keyword, setKeyword] = useState<string>("");
   const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
   const [selectedIsResolved, setSelectedIsResolved] = useState<IsResolved>(false);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(false);
-
-  //初回表示用のフラグ
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [isInitialLoad, setIsInitialLoad] = useState(true); // 初回表示用フラグ
+  const [selectedImage, setSelectedImage] = useState<string | null>(null); // モーダル用画像
 
   const searchParams = useSearchParams();
 
@@ -97,29 +96,28 @@ const SearchPage: React.FC = () => {
     try {
       const queryParams = new URLSearchParams();
 
-      //キーワードをクエリパラメータに追加
+      // キーワードをクエリパラメータに追加
       if (keyword.trim() !== "") {
         queryParams.set("keyword", keyword.trim());
       }
-  
+
       // タグをクエリパラメータに追加
       if (selectedTags.length > 0) {
         queryParams.set(
-          'tag',
-          selectedTags.map((tag) => tag.name).join(',')
+          "tag",
+          selectedTags.map((tag) => tag.name).join(",")
         );
       }
 
-
       if (selectedIsResolved !== null) {
-        queryParams.set('isResolved', selectedIsResolved.toString()); // selectedIsResolvedを使用
+        queryParams.set("isResolved", selectedIsResolved.toString());
       }
-  
+
       const res = await fetch(`/api/get-questions?${queryParams.toString()}`);
       if (!res.ok) {
-        throw new Error('Failed to fetch questions');
+        throw new Error("Failed to fetch questions");
       }
-  
+
       const data = await res.json();
       setQuestions(data); // 取得した質問データをセット
     } catch (error) {
@@ -129,7 +127,10 @@ const SearchPage: React.FC = () => {
       setIsInitialLoad(false);
     }
   };
-  
+
+  const closeModal = () => {
+    setSelectedImage(null); // モーダルを閉じる
+  };
 
   return (
     <div className={styles.pageContainer}>
@@ -157,7 +158,7 @@ const SearchPage: React.FC = () => {
               name="status"
               value="true"
               checked={selectedIsResolved === true}
-              onChange={() => setSelectedIsResolved(true)} //IsResolvedを解決に変更
+              onChange={() => setSelectedIsResolved(true)}
               disabled={loading}
             />
             解決済
@@ -181,7 +182,6 @@ const SearchPage: React.FC = () => {
       </div>
 
       <div className={styles.questionList}>
-        {/* 初回表示時に分岐 */}
         {isInitialLoad ? (
           <p>キーワードやタグを入力してください。</p>
         ) : questions.length > 0 ? (
@@ -190,33 +190,24 @@ const SearchPage: React.FC = () => {
               <h3 className={styles.questionTitle}>
                 <Link href={`/question/${question.id}`}>{question.title}</Link>
               </h3>
-              {/* 投稿日時とタグを横並びに表示するため、同じdivで囲む */}
               <div className={styles.dateAndTags}>
-                {/* タグ一覧を一行で表示 */}
                 <div className={styles.tagContainer}>
                   <span className={styles.tags}>
-                    {/* 解決状態のタグ */}
-                    <span className={styles.tag} style={{ color: question.isResolved ? 'green' : 'red' }}>
+                    <span
+                      className={styles.tag}
+                      style={{ color: question.isResolved ? "green" : "red" }}
+                    >
                       {question.isResolved ? "解決済み" : "未解決"}
                     </span>
-
-                    {/* 質問に関連するタグ */}
-                    {question.tags && question.tags.length > 0 &&
-                      question.tags.map((tag) => (
-                        <span key={tag.id} className={styles.tag}>
-                          {tag.name}
-                        </span>
-                      ))
-                    }
+                    {question.tags.map((tag) => (
+                      <span key={tag.id} className={styles.tag}>
+                        {tag.name}
+                      </span>
+                    ))}
                   </span>
                 </div>
-
-                {/* 投稿日時 */}
-                <div className={styles.dateInfo}>
-                  {formatDate(question.createdAt)}
-                </div>
+                <div className={styles.dateInfo}>{formatDate(question.createdAt)}</div>
               </div>
-              {/* 添付画像 */}
               {question.images && question.images.length > 0 && (
                 <div className={styles.imageGrid}>
                   {question.images.map((image) => (
@@ -225,7 +216,8 @@ const SearchPage: React.FC = () => {
                       src={toDataURL(image.binaryData)}
                       alt="添付画像"
                       className={styles.image}
-                      onError={(e) => (e.currentTarget.src = '/fallback-image.jpg')} // フォールバック画像
+                      onClick={() => setSelectedImage(toDataURL(image.binaryData))} // 画像クリックでモーダルを開く
+                      onError={(e) => (e.currentTarget.src = "/fallback-image.jpg")} // フォールバック画像
                     />
                   ))}
                 </div>
@@ -240,6 +232,15 @@ const SearchPage: React.FC = () => {
           <p>条件に一致する質問が見つかりませんでした。</p>
         )}
       </div>
+
+      {/* モーダル */}
+      {selectedImage && (
+        <div className={styles.modal} onClick={closeModal}>
+          <div className={styles.modalContent}>
+            <img src={selectedImage} alt="拡大画像" className={styles.modalImage} />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
