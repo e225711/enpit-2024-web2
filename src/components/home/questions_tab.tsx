@@ -43,6 +43,7 @@ const toDataURL = (base64: string): string => {
 
 const QuestionsTab: React.FC<QuestionsTabProps> = ({ questions, unresolvedQuestions, tags }) => {
   const [activeTab, setActiveTab] = useState<Tab>('latest'); // デフォルトで 'latest' を選択
+  const [selectedImage, setSelectedImage] = useState<string | null>(null); // 拡大表示用の画像URL
 
   const handleTabClick = (tab: Tab) => {
     setActiveTab(tab);
@@ -51,6 +52,10 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ questions, unresolvedQuesti
   const formatDate = (date: Date) => {
     const dateObj = new Date(date);
     return format(dateObj, 'yyyy年MM月dd日 HH:mm', { locale: ja });
+  };
+
+  const closeModal = () => {
+    setSelectedImage(null); // モーダルを閉じる
   };
 
   const renderQuestions = (questions: Question[]) => (
@@ -84,6 +89,7 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ questions, unresolvedQuesti
                     src={toDataURL(image.binaryData)} 
                     alt="添付画像"
                     className={styles.image}
+                    onClick={() => setSelectedImage(toDataURL(image.binaryData))} // 拡大画像を設定
                     onError={(e) => (e.currentTarget.src = '/fallback-image.jpg')} // フォールバック画像
                   />
                 ))}
@@ -133,6 +139,15 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ questions, unresolvedQuesti
           {activeTab === 'unresolved' && renderQuestions(unresolvedQuestions)}
         </div>
       </main>
+
+      {/* モーダル */}
+      {selectedImage && (
+        <div className={styles.modal} onClick={closeModal}>
+          <div className={styles.modalContent}>
+            <img src={selectedImage} alt="拡大画像" className={styles.modalImage} />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
