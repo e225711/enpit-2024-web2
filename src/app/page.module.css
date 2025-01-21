@@ -15,6 +15,36 @@
   border-right: 1px solid #ddd;
 }
 
+/* タグ一覧の見出しスタイル */
+.sidebar > p {
+  font-weight: bold;
+  margin-bottom: 15px;
+  font-size: 0.9em; /* 見出しを少し小さく */
+}
+
+/* 各タグ項目のコンテナ */
+.tagItem {
+  margin-bottom: 10px;
+}
+
+/* タグリンクのスタイル */
+.tagLink {
+  display: inline-block;
+  padding: 3px 5px;
+  background-color: #e0e0e0;
+  color: #333;
+  text-decoration: none;
+  border-radius: 5px;
+  transition: background-color 0.3s ease;
+  font-size: 0.85em;  /* タグリンクの文字を少し小さく */
+}
+
+/* ホバー時のスタイル変更 */
+.tagLink:hover {
+  background-color: #ccc;
+}
+
+
 .main {
   background-color: #fff;
   padding: 20px;
