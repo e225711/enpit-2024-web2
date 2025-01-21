@@ -5,9 +5,11 @@ import Link from "next/link";
 import { marked } from 'marked';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
+import { useSearchParams } from 'next/navigation';  // 追加
 import styles from "./page.module.css";
 import TagSelector from "@/components/TagSelector";
 import Header from '@/components/header/header';
+
 
 type Tag = {
   id: number;
@@ -52,6 +54,42 @@ const SearchPage: React.FC = () => {
 
   //初回表示用のフラグ
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const tagParam = searchParams.get("tag");
+    if (tagParam) {
+      const tagNames = tagParam.split(',').map(name => name.trim()).filter(name => name !== '');
+      if(tagNames.length > 0) {
+        const initialTags = tagNames.map((name, idx) => ({ id: idx, name }));
+        setSelectedTags(initialTags);
+      }
+
+      const queryParams = new URLSearchParams();
+      if (keyword.trim() !== "") {
+        queryParams.set("keyword", keyword.trim());
+      }
+      if (tagNames.length > 0) {
+        queryParams.set("tag", tagNames.join(','));
+      }
+      if (selectedIsResolved !== null) {
+        queryParams.set('isResolved', selectedIsResolved.toString());
+      }
+      setLoading(true);
+      fetch(`/api/get-questions?${queryParams.toString()}`)
+        .then(res => {
+          if (!res.ok) throw new Error('Failed to fetch questions');
+          return res.json();
+        })
+        .then(data => setQuestions(data))
+        .catch(error => console.error(error))
+        .finally(() => {
+          setLoading(false);
+          setIsInitialLoad(false);
+        });
+    }
+  }, [searchParams]);
 
   const fetchQuestions = async () => {
     setLoading(true);

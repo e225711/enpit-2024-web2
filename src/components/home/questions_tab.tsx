@@ -107,7 +107,11 @@ const QuestionsTab: React.FC<QuestionsTabProps> = ({ questions, unresolvedQuesti
         <p>タグ一覧</p>
         {tags.length > 0 ? (
           tags.map((tag) => (
-            <div key={tag.id}>{tag.name}</div>
+            <div key={tag.id} className={styles.tagItem}>
+              <Link href={`/search_question?tag=${encodeURIComponent(tag.name)}`} className={styles.tagLink}>
+                {tag.name}
+              </Link>
+            </div>
           ))
         ) : (
           <p>タグがありません</p>
