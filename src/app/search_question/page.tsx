@@ -3,12 +3,12 @@
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";  // Suspense を追加
 import Link from "next/link";
 import { marked } from 'marked';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import { useSearchParams } from 'next/navigation';  // 追加
+import { useSearchParams } from 'next/navigation';
 import styles from "./page.module.css";
 import TagSelector from "@/components/TagSelector";
 import Header from "@/components/header/header";
@@ -21,7 +21,7 @@ type Tag = {
 type Image = {
   id: number;
   questionId: number;
-  binaryData: string; // Base64形式
+  binaryData: string;
   createdAt: Date;
 };
 
@@ -43,7 +43,7 @@ const formatDate = (date: string) => {
 };
 
 const toDataURL = (base64: string): string => {
-  return `data:image/jpeg;base64,${base64}`; // 必要に応じてMIMEタイプを変更
+  return `data:image/jpeg;base64,${base64}`;
 };
 
 const SearchPage: React.FC = () => {
@@ -53,8 +53,8 @@ const SearchPage: React.FC = () => {
   const [selectedIsResolved, setSelectedIsResolved] = useState<IsResolved>(false);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(false);
-  const [isInitialLoad, setIsInitialLoad] = useState(true); // 初回表示用フラグ
-  const [selectedImage, setSelectedImage] = useState<string | null>(null); // モーダル用画像
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   const searchParams = useSearchParams();
 
@@ -98,12 +98,10 @@ const SearchPage: React.FC = () => {
     try {
       const queryParams = new URLSearchParams();
 
-      // キーワードをクエリパラメータに追加
       if (keyword.trim() !== "") {
         queryParams.set("keyword", keyword.trim());
       }
 
-      // タグをクエリパラメータに追加
       if (selectedTags.length > 0) {
         queryParams.set(
           "tag",
@@ -121,7 +119,7 @@ const SearchPage: React.FC = () => {
       }
 
       const data = await res.json();
-      setQuestions(data); // 取得した質問データをセット
+      setQuestions(data);
     } catch (error) {
       console.error(error);
     } finally {
@@ -131,119 +129,121 @@ const SearchPage: React.FC = () => {
   };
 
   const closeModal = () => {
-    setSelectedImage(null); // モーダルを閉じる
+    setSelectedImage(null);
   };
 
   return (
-    <div className={styles.pageContainer}>
-      <Header />
-      <div className={styles.searchContainer}>
-        <textarea
-          placeholder="キーワードを入力してください（任意）"
-          className={styles.textarea}
-          disabled={loading}
-          value={keyword}
-          onChange={(e) => setKeyword(e.target.value)}
-        />
+    // Suspense でラップしてフォールバック UI を提供
+    <Suspense fallback={<p>Loading...</p>}>
+      <div className={styles.pageContainer}>
+        <Header />
+        <div className={styles.searchContainer}>
+          <textarea
+            placeholder="キーワードを入力してください（任意）"
+            className={styles.textarea}
+            disabled={loading}
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+          />
 
-        <TagSelector
-          selectedTags={selectedTags}
-          setSelectedTags={setSelectedTags}
-          isProcessing={loading}
-          allowTagCreation={false} // タグ作成を無効化
-        />
+          <TagSelector
+            selectedTags={selectedTags}
+            setSelectedTags={setSelectedTags}
+            isProcessing={loading}
+            allowTagCreation={false}
+          />
 
-        <div className={styles.radioGroup}>
-          <label className={styles.radioLabel}>
-            <input
-              type="radio"
-              name="status"
-              value="true"
-              checked={selectedIsResolved === true}
-              onChange={() => setSelectedIsResolved(true)}
-              disabled={loading}
-            />
-            解決済
-          </label>
-          <label className={styles.radioLabel}>
-            <input
-              type="radio"
-              name="status"
-              value="false"
-              checked={selectedIsResolved === false}
-              onChange={() => setSelectedIsResolved(false)}
-              disabled={loading}
-            />
-            未解決
-          </label>
+          <div className={styles.radioGroup}>
+            <label className={styles.radioLabel}>
+              <input
+                type="radio"
+                name="status"
+                value="true"
+                checked={selectedIsResolved === true}
+                onChange={() => setSelectedIsResolved(true)}
+                disabled={loading}
+              />
+              解決済
+            </label>
+            <label className={styles.radioLabel}>
+              <input
+                type="radio"
+                name="status"
+                value="false"
+                checked={selectedIsResolved === false}
+                onChange={() => setSelectedIsResolved(false)}
+                disabled={loading}
+              />
+              未解決
+            </label>
+          </div>
+
+          <button className={styles.button} onClick={fetchQuestions} disabled={loading}>
+            {loading ? "質問検索中..." : "検索する"}
+          </button>
         </div>
 
-        <button className={styles.button} onClick={fetchQuestions} disabled={loading}>
-          {loading ? "質問検索中..." : "検索する"}
-        </button>
-      </div>
-
-      <div className={styles.questionList}>
-        {isInitialLoad ? (
-          <p>キーワードやタグを入力してください。</p>
-        ) : questions.length > 0 ? (
-          questions.map((question) => (
-            <div key={question.id} className={styles.questionItem}>
-              <h3 className={styles.questionTitle}>
-                <Link href={`/question/${question.id}`}>{question.title}</Link>
-              </h3>
-              <div className={styles.dateAndTags}>
-                <div className={styles.tagContainer}>
-                  <span className={styles.tags}>
-                    <span
-                      className={styles.tag}
-                      style={{ color: question.isResolved ? "green" : "red" }}
-                    >
-                      {question.isResolved ? "解決済み" : "未解決"}
-                    </span>
-                    {question.tags.map((tag) => (
-                      <span key={tag.id} className={styles.tag}>
-                        {tag.name}
+        <div className={styles.questionList}>
+          {isInitialLoad ? (
+            <p>キーワードやタグを入力してください。</p>
+          ) : questions.length > 0 ? (
+            questions.map((question) => (
+              <div key={question.id} className={styles.questionItem}>
+                <h3 className={styles.questionTitle}>
+                  <Link href={`/question/${question.id}`}>{question.title}</Link>
+                </h3>
+                <div className={styles.dateAndTags}>
+                  <div className={styles.tagContainer}>
+                    <span className={styles.tags}>
+                      <span
+                        className={styles.tag}
+                        style={{ color: question.isResolved ? "green" : "red" }}
+                      >
+                        {question.isResolved ? "解決済み" : "未解決"}
                       </span>
+                      {question.tags.map((tag) => (
+                        <span key={tag.id} className={styles.tag}>
+                          {tag.name}
+                        </span>
+                      ))}
+                    </span>
+                  </div>
+                  <div className={styles.dateInfo}>{formatDate(question.createdAt)}</div>
+                </div>
+                {question.images && question.images.length > 0 && (
+                  <div className={styles.imageGrid}>
+                    {question.images.map((image) => (
+                      <img
+                        key={image.id}
+                        src={toDataURL(image.binaryData)}
+                        alt="添付画像"
+                        className={styles.image}
+                        onClick={() => setSelectedImage(toDataURL(image.binaryData))}
+                        onError={(e) => (e.currentTarget.src = "/fallback-image.jpg")}
+                      />
                     ))}
-                  </span>
-                </div>
-                <div className={styles.dateInfo}>{formatDate(question.createdAt)}</div>
+                  </div>
+                )}
+                <div
+                  className={styles.markdownContent}
+                  dangerouslySetInnerHTML={{ __html: marked(question.content) }}
+                />
               </div>
-              {question.images && question.images.length > 0 && (
-                <div className={styles.imageGrid}>
-                  {question.images.map((image) => (
-                    <img
-                      key={image.id}
-                      src={toDataURL(image.binaryData)}
-                      alt="添付画像"
-                      className={styles.image}
-                      onClick={() => setSelectedImage(toDataURL(image.binaryData))} // 画像クリックでモーダルを開く
-                      onError={(e) => (e.currentTarget.src = "/fallback-image.jpg")} // フォールバック画像
-                    />
-                  ))}
-                </div>
-              )}
-              <div
-                className={styles.markdownContent}
-                dangerouslySetInnerHTML={{ __html: marked(question.content) }}
-              />
+            ))
+          ) : (
+            <p>条件に一致する質問が見つかりませんでした。</p>
+          )}
+        </div>
+
+        {selectedImage && (
+          <div className={styles.modal} onClick={closeModal}>
+            <div className={styles.modalContent}>
+              <img src={selectedImage} alt="拡大画像" className={styles.modalImage} />
             </div>
-          ))
-        ) : (
-          <p>条件に一致する質問が見つかりませんでした。</p>
+          </div>
         )}
       </div>
-
-      {/* モーダル */}
-      {selectedImage && (
-        <div className={styles.modal} onClick={closeModal}>
-          <div className={styles.modalContent}>
-            <img src={selectedImage} alt="拡大画像" className={styles.modalImage} />
-          </div>
-        </div>
-      )}
-    </div>
+    </Suspense>
   );
 };
 
