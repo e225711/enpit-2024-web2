@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { marked } from 'marked';
 import { format } from 'date-fns';
@@ -9,7 +9,6 @@ import { useSearchParams } from 'next/navigation';  // 追加
 import styles from "./page.module.css";
 import TagSelector from "@/components/TagSelector";
 import Header from "@/components/header/header";
-
 
 type Tag = {
   id: number;
